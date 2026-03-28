@@ -52,6 +52,12 @@ class ActivityData:
     def has_timestamps(self) -> bool:
         return self.timestamp_count >= 2
 
+    @cached_property
+    def start_coordinate(self) -> tuple[float, float] | None:
+        for point in self.points:
+            return (point.latitude, point.longitude)
+        return None
+
 
 @dataclass(frozen=True)
 class ActivitySummary:

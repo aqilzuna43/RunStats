@@ -90,12 +90,28 @@ def summarize_activity(activity: ActivityData) -> ActivitySummary:
     distance_km = distance_m / 1000.0
     avg_pace_min_per_km = (moving_time_s / 60.0) / distance_km
 
-    return ActivitySummary(
+    computed = ActivitySummary(
         distance_km=distance_km,
         moving_time_s=moving_time_s,
         elapsed_time_s=elapsed_time_s,
         avg_pace_min_per_km=avg_pace_min_per_km,
         elevation_gain_m=elevation_gain_m if elevation_seen else None,
+    )
+    return _merge_summary_hint(computed, activity.summary_hint)
+
+
+def _merge_summary_hint(computed: ActivitySummary, hint: ActivitySummary | None) -> ActivitySummary:
+    if hint is None:
+        return computed
+
+    return ActivitySummary(
+        distance_km=computed.distance_km,
+        moving_time_s=computed.moving_time_s,
+        elapsed_time_s=computed.elapsed_time_s,
+        avg_pace_min_per_km=computed.avg_pace_min_per_km,
+        elevation_gain_m=computed.elevation_gain_m if computed.elevation_gain_m is not None else hint.elevation_gain_m,
+        avg_heart_rate_bpm=hint.avg_heart_rate_bpm,
+        total_calories_kcal=hint.total_calories_kcal,
     )
 
 

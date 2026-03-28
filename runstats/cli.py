@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from urllib.error import URLError
 
+from .geocode import reverse_geocode_activity
 from .ingest import discover_activity_files, load_activity
 from .metrics import SummaryError, summarize_activity
 from .templates import DEFAULT_TITLE, TEMPLATE_NAMES, render_template
 
 
+DEFAULT_OUTPUT_DIR = Path("exports")
 _TEMPLATE_LABELS = [
     ("story_overlay", "Story Overlay - 1080x1920 Instagram story"),
     ("clean_card", "Clean Card - 1600x1600 square card"),
@@ -47,6 +50,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Render without summary stats if timing data is unavailable.",
     )
+    parser.add_argument(
+        "--location",
+        default=None,
+        help="Location label shown on supported templates (e.g. 'Eco Horizon, Penang').",
+    )
+    parser.add_argument(
+        "--no-geocode",
+        action="store_true",
+        help="Do not attempt reverse geocoding when --location is not provided.",
+    )
     return parser
 
 
@@ -77,7 +90,11 @@ def main(argv: list[str] | None = None) -> int:
     template = _resolve_template(args.template, args.auto)
     route_mode = _resolve_route_mode(args.mode, template, activity.has_speed_data(), args.auto)
     title = None if args.no_title else args.title
-    output_path = Path(args.output) if args.output else Path(f"{template}.png")
+    output_path = Path(args.output) if args.output else DEFAULT_OUTPUT_DIR / f"{template}.png"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    location = args.location
+    if location is None and not args.no_geocode:
+        location = _resolve_location(activity)
 
     print(f"Selected: {Path(input_path).name}")
     print(f"Template: {template}")
@@ -95,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
         route_mode=route_mode,
         summary=summary,
         title=title,
+        location=location,
     )
     print(f"Saved to {output_path}")
     return 0
@@ -177,3 +195,15 @@ def _resolve_route_mode(mode: str, template: str, has_speed_data: bool, auto_sel
         if choice == "2":
             return "gradient"
         print("Enter 1 or 2.")
+
+
+def _resolve_location(activity) -> str | None:
+    try:
+        location = reverse_geocode_activity(activity)
+    except OSError as exc:
+        print(f"Location unavailable: {exc}", file=sys.stderr)
+        return None
+    except URLError as exc:
+        print(f"Location unavailable: {exc}", file=sys.stderr)
+        return None
+    return location
