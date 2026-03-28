@@ -9,6 +9,15 @@ from .metrics import SummaryError, summarize_activity
 from .templates import DEFAULT_TITLE, TEMPLATE_NAMES, render_template
 
 
+_TEMPLATE_LABELS = [
+    ("story_overlay", "Story Overlay - 1080x1920 Instagram story"),
+    ("clean_card", "Clean Card - 1600x1600 square card"),
+    ("glass_slab", "Glass Slab - Frosted glass with map peek-through"),
+    ("clipboard_card", "Clipboard Card - Stacked stat rows, orange accent"),
+    ("neon_split", "Neon Split - Dark card with gradient accent bar"),
+]
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Render route-based run stat overlays from FIT or GPX files.")
     parser.add_argument("--input", help="Path to a .fit or .gpx activity file.")
@@ -58,28 +67,29 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"Summary unavailable: {exc}", file=sys.stderr)
 
-    if len(activity.points) < 2 and summary is None:
+    if activity.point_count < 2 and summary is None:
         print("No usable route points found in the selected activity file.", file=sys.stderr)
         return 1
-    if args.route_only and len(activity.points) < 2:
+    if args.route_only and activity.point_count < 2:
         print("Route-only export requires at least two route points.", file=sys.stderr)
         return 1
 
-    route_mode = _resolve_route_mode(args.mode, args.template, activity.has_speed_data(), args.auto)
+    template = _resolve_template(args.template, args.auto)
+    route_mode = _resolve_route_mode(args.mode, template, activity.has_speed_data(), args.auto)
     title = None if args.no_title else args.title
-    output_path = Path(args.output) if args.output else Path(f"{args.template}.png")
+    output_path = Path(args.output) if args.output else Path(f"{template}.png")
 
     print(f"Selected: {Path(input_path).name}")
-    print(f"Template: {args.template}")
+    print(f"Template: {template}")
     print(f"Mode: {route_mode}")
-    print(f"Points: {len(activity.points)}")
+    print(f"Points: {activity.point_count}")
     if summary is not None:
         print(f"Distance: {summary.distance_km:.2f} km")
         print(f"Pace: {summary.avg_pace_min_per_km:.2f} min/km")
         print(f"Time: {summary.moving_time_s / 60.0:.1f} min")
 
     render_template(
-        template_name=args.template,
+        template_name=template,
         activity=activity,
         output_path=output_path,
         route_mode=route_mode,
@@ -119,6 +129,25 @@ def _resolve_input(explicit_input: str | None, search_dir: str, auto_select: boo
         print(f"Invalid choice. Enter a number between 1 and {len(files)}.")
 
 
+def _resolve_template(explicit: str, auto_select: bool) -> str:
+    if explicit != "story_overlay":
+        return explicit
+    if auto_select or not sys.stdin.isatty():
+        return explicit
+
+    print("\n--- Overlay templates ---")
+    for index, (_, desc) in enumerate(_TEMPLATE_LABELS, start=1):
+        print(f"  [{index}] {desc}")
+
+    while True:
+        choice = input(f"Select template [1-{len(_TEMPLATE_LABELS)}] (default 1): ").strip()
+        if choice == "":
+            return _TEMPLATE_LABELS[0][0]
+        if choice.isdigit() and 1 <= int(choice) <= len(_TEMPLATE_LABELS):
+            return _TEMPLATE_LABELS[int(choice) - 1][0]
+        print(f"Invalid choice. Enter a number between 1 and {len(_TEMPLATE_LABELS)}.")
+
+
 def _resolve_route_mode(mode: str, template: str, has_speed_data: bool, auto_select: bool) -> str:
     if mode in {"solid", "gradient"}:
         if mode == "gradient" and not has_speed_data:
@@ -126,7 +155,7 @@ def _resolve_route_mode(mode: str, template: str, has_speed_data: bool, auto_sel
             return "solid"
         return mode
 
-    default_mode = "solid" if template == "story_overlay" else "gradient"
+    default_mode = "gradient" if template == "clean_card" else "solid"
     if not has_speed_data:
         return "solid"
 

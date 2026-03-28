@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import gpxpy
-
 from .models import ActivityData, ActivitySummary, TrackPoint
 
 
@@ -32,35 +30,30 @@ def load_activity(path: str | Path) -> ActivityData:
 
 
 def _parse_fit(path: Path) -> ActivityData:
-    from fitparse import FitFile
+    try:
+        from fitparse import FitFile
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "FIT support requires 'fitparse'. Install the project dependencies first."
+        ) from exc
 
     fit = FitFile(str(path))
     points: list[TrackPoint] = []
     session_summary: ActivitySummary | None = None
 
     for record in fit.get_messages("record"):
-        data = {field.name: field.value for field in record.fields}
-
-        lat = data.get("position_lat")
-        lon = data.get("position_long")
+        lat = _field_value(record.fields, "position_lat")
+        lon = _field_value(record.fields, "position_long")
         if lat is None or lon is None:
             continue
 
-        speed = data.get("enhanced_speed")
-        if speed is None:
-            speed = data.get("speed")
-
-        elevation = data.get("enhanced_altitude")
-        if elevation is None:
-            elevation = data.get("altitude")
-
         points.append(
-            TrackPoint(
+            _build_track_point(
                 latitude=lat * SEMICIRCLE_TO_DEGREES,
                 longitude=lon * SEMICIRCLE_TO_DEGREES,
-                timestamp=data.get("timestamp"),
-                speed_mps=float(speed) if speed is not None else None,
-                elevation_m=float(elevation) if elevation is not None else None,
+                timestamp=_field_value(record.fields, "timestamp"),
+                speed=_coalesce_fields(record.fields, "enhanced_speed", "speed"),
+                elevation=_coalesce_fields(record.fields, "enhanced_altitude", "altitude"),
             )
         )
 
@@ -78,6 +71,13 @@ def _parse_fit(path: Path) -> ActivityData:
 
 
 def _parse_gpx(path: Path) -> ActivityData:
+    try:
+        import gpxpy
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "GPX support requires 'gpxpy'. Install the project dependencies first."
+        ) from exc
+
     with path.open("r", encoding="utf-8") as handle:
         gpx = gpxpy.parse(handle)
 
@@ -92,22 +92,22 @@ def _parse_gpx(path: Path) -> ActivityData:
                     speed = point.speed_between(segment_points[index - 1]) or None
 
                 points.append(
-                    TrackPoint(
+                    _build_track_point(
                         latitude=point.latitude,
                         longitude=point.longitude,
                         timestamp=point.time,
-                        speed_mps=float(speed) if speed is not None else None,
-                        elevation_m=float(point.elevation) if point.elevation is not None else None,
+                        speed=speed,
+                        elevation=point.elevation,
                     )
                 )
 
     for route in gpx.routes:
         for point in route.points:
             points.append(
-                TrackPoint(
+                _build_track_point(
                     latitude=point.latitude,
                     longitude=point.longitude,
-                    elevation_m=float(point.elevation) if point.elevation is not None else None,
+                    elevation=point.elevation,
                 )
             )
 
@@ -115,10 +115,9 @@ def _parse_gpx(path: Path) -> ActivityData:
 
 
 def _session_to_summary(session) -> ActivitySummary | None:
-    data = {field.name: field.value for field in session.fields}
-    total_distance_m = data.get("total_distance")
-    total_timer_time_s = data.get("total_timer_time")
-    total_elapsed_time_s = data.get("total_elapsed_time")
+    total_distance_m = _field_value(session.fields, "total_distance")
+    total_timer_time_s = _field_value(session.fields, "total_timer_time")
+    total_elapsed_time_s = _field_value(session.fields, "total_elapsed_time")
 
     if total_distance_m in (None, 0) or total_timer_time_s in (None, 0):
         return None
@@ -128,11 +127,47 @@ def _session_to_summary(session) -> ActivitySummary | None:
     elapsed_time_s = float(total_elapsed_time_s or total_timer_time_s)
     avg_pace_min_per_km = (moving_time_s / 60.0) / distance_km
 
-    elevation_gain = data.get("total_ascent")
+    elevation_gain = _field_value(session.fields, "total_ascent")
+    avg_hr = _field_value(session.fields, "avg_heart_rate")
+    calories = _field_value(session.fields, "total_calories")
     return ActivitySummary(
         distance_km=distance_km,
         moving_time_s=moving_time_s,
         elapsed_time_s=elapsed_time_s,
         avg_pace_min_per_km=avg_pace_min_per_km,
         elevation_gain_m=float(elevation_gain) if elevation_gain is not None else None,
+        avg_heart_rate_bpm=int(avg_hr) if avg_hr is not None else None,
+        total_calories_kcal=int(calories) if calories is not None else None,
     )
+
+
+def _build_track_point(
+    *,
+    latitude: float,
+    longitude: float,
+    timestamp=None,
+    speed=None,
+    elevation=None,
+) -> TrackPoint:
+    return TrackPoint(
+        latitude=latitude,
+        longitude=longitude,
+        timestamp=timestamp,
+        speed_mps=float(speed) if speed is not None else None,
+        elevation_m=float(elevation) if elevation is not None else None,
+    )
+
+
+def _field_value(fields, name: str):
+    for field in fields:
+        if field.name == name:
+            return field.value
+    return None
+
+
+def _coalesce_fields(fields, *names: str):
+    for name in names:
+        value = _field_value(fields, name)
+        if value is not None:
+            return value
+    return None

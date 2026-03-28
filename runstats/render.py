@@ -25,15 +25,16 @@ class RouteStyle:
 
 
 def render_route(ax: plt.Axes, activity: ActivityData, style: RouteStyle) -> None:
-    lons = np.array(activity.longitudes, dtype=float)
-    lats = np.array(activity.latitudes, dtype=float)
+    lons = np.asarray(activity.longitudes, dtype=float)
+    lats = np.asarray(activity.latitudes, dtype=float)
 
     if len(lons) < 2 or len(lats) < 2:
         raise ValueError("At least two route points are required to render the route.")
 
     if style.mode == "gradient" and activity.has_speed_data():
-        speeds = np.array(activity.speeds_mps, dtype=float)
-        _render_gradient(ax, lons, lats, speeds, style.line_width)
+        speeds = np.asarray(activity.speeds_mps, dtype=float)
+        nonzero_speeds = np.asarray(activity.gradient_speeds, dtype=float)
+        _render_gradient(ax, lons, lats, speeds, nonzero_speeds, style.line_width)
     else:
         _render_solid(ax, lons, lats, style)
 
@@ -55,16 +56,20 @@ def _render_solid(ax: plt.Axes, lons: np.ndarray, lats: np.ndarray, style: Route
 
 
 def _render_gradient(
-    ax: plt.Axes, lons: np.ndarray, lats: np.ndarray, speeds: np.ndarray, line_width: float
+    ax: plt.Axes,
+    lons: np.ndarray,
+    lats: np.ndarray,
+    speeds: np.ndarray,
+    nonzero_speeds: np.ndarray,
+    line_width: float,
 ) -> None:
     points = np.column_stack([lons, lats]).reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     seg_speeds = (speeds[:-1] + speeds[1:]) / 2.0
 
-    nonzero = speeds[speeds > 0.1]
-    if len(nonzero) > 0:
-        vmin = float(np.percentile(nonzero, 5))
-        vmax = float(np.percentile(nonzero, 95))
+    if len(nonzero_speeds) > 0:
+        vmin = float(np.percentile(nonzero_speeds, 5))
+        vmax = float(np.percentile(nonzero_speeds, 95))
         if vmin == vmax:
             vmax = vmin + 0.1
     else:

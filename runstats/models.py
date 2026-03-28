@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 
 
@@ -22,22 +23,34 @@ class ActivityData:
     summary_hint: "ActivitySummary | None" = None
 
     @property
-    def latitudes(self) -> list[float]:
-        return [point.latitude for point in self.points]
+    def point_count(self) -> int:
+        return len(self.points)
 
-    @property
-    def longitudes(self) -> list[float]:
-        return [point.longitude for point in self.points]
+    @cached_property
+    def latitudes(self) -> tuple[float, ...]:
+        return tuple(point.latitude for point in self.points)
 
-    @property
-    def speeds_mps(self) -> list[float]:
-        return [point.speed_mps or 0.0 for point in self.points]
+    @cached_property
+    def longitudes(self) -> tuple[float, ...]:
+        return tuple(point.longitude for point in self.points)
+
+    @cached_property
+    def speeds_mps(self) -> tuple[float, ...]:
+        return tuple(point.speed_mps or 0.0 for point in self.points)
+
+    @cached_property
+    def gradient_speeds(self) -> tuple[float, ...]:
+        return tuple(speed for speed in self.speeds_mps if speed > 0.1)
 
     def has_speed_data(self) -> bool:
-        return len([speed for speed in self.speeds_mps if speed > 0.1]) >= 10
+        return len(self.gradient_speeds) >= 10
+
+    @cached_property
+    def timestamp_count(self) -> int:
+        return sum(1 for point in self.points if point.timestamp is not None)
 
     def has_timestamps(self) -> bool:
-        return sum(1 for point in self.points if point.timestamp is not None) >= 2
+        return self.timestamp_count >= 2
 
 
 @dataclass(frozen=True)
@@ -47,3 +60,5 @@ class ActivitySummary:
     elapsed_time_s: float
     avg_pace_min_per_km: float
     elevation_gain_m: float | None = None
+    avg_heart_rate_bpm: int | None = None
+    total_calories_kcal: int | None = None

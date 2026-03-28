@@ -5,7 +5,12 @@
       "Bash(pip install:*)",
       "Bash(ls:*)",
       "Bash(echo:*)",
-      "Bash(fc-list:*)"
+      "Bash(fc-list:*)",
+      "Bash(grep -E \"\\\\.\\(py|js|ts|sh|md|json|yaml|yml|png|jpg|jpeg|gif|svg\\)$\")",
+      "Bash(python3 plot_gpx.py --help)",
+      "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template glass_slab --output glass_slab.png --auto)",
+      "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template clipboard_card --output clipboard_card.png --auto)",
+      "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template neon_split --output neon_split.png --auto)"
     ]
   }
 }

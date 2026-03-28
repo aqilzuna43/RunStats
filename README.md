@@ -2,12 +2,24 @@
 
 Render transparent run-stat overlays from local `.fit` and `.gpx` activity files.
 
+## Install
+
+```bash
+python -m pip install -e .
+```
+
 ## Usage
 
 Default interactive flow:
 
 ```bash
 python plot_gpx.py
+```
+
+Console entrypoint:
+
+```bash
+runstats --auto
 ```
 
 Render the Instagram Story overlay directly:
