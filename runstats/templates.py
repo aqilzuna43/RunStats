@@ -21,6 +21,7 @@ TEMPLATE_NAMES = (
     "neon_data_story",
     "minimalist_overlay",
     "tech_grid_overlay",
+    "pro_analyst",
 )
 
 
@@ -95,6 +96,11 @@ def render_template(
     if template_name == "tech_grid_overlay":
         from .templates_tech_grid import render_tech_grid_overlay
         render_tech_grid_overlay(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "pro_analyst":
+        from .templates_pro_analyst import render_pro_analyst
+        render_pro_analyst(activity, output_path, route_mode, summary, location)
         return
 
     raise ValueError(f"Unknown template: {template_name}")
