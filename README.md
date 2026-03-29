@@ -22,6 +22,18 @@ Console entrypoint:
 runstats --auto
 ```
 
+Machine-facing automation entrypoint:
+
+```bash
+runstats-automation --input C:\RunStatsAutomation\processing\22321337482_ACTIVITY.fit
+```
+
+Direct Telegram bot runner:
+
+```bash
+runstats-telegram-bot --chat-id 535004713 --workspace C:\RunStatsAutomation
+```
+
 Render the Instagram Story overlay directly:
 
 ```bash
@@ -59,3 +71,14 @@ python plot_gpx.py --input activity.gpx --route-only --output route_only.png
 - `--no-title`
 - `--auto`
 - `--search-dir .`
+
+## Telegram Automation
+
+For the direct bot workflow without n8n, use:
+
+- [`docs/telegram_bot_runner.md`](/C:/Users/Eurus/Documents/GitHub/RunStats/docs/telegram_bot_runner.md)
+
+For the earlier n8n-based approach, keep using:
+
+- [`docs/telegram_ingest_automation.md`](/C:/Users/Eurus/Documents/GitHub/RunStats/docs/telegram_ingest_automation.md)
+- [`n8n/telegram_ingest_workflow.example.json`](/C:/Users/Eurus/Documents/GitHub/RunStats/n8n/telegram_ingest_workflow.example.json)

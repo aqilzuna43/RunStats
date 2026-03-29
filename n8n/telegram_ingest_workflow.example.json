@@ -1,0 +1,397 @@
+{
+  "name": "RunStats Telegram FIT Ingest (Example)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "normalize-fit-upload",
+      "name": "Normalize FIT Upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const message = $json.message ?? {};\nconst document = message.document ?? null;\nconst fileName = document?.file_name ?? '';\nconst chatId = message.chat?.id ?? null;\nconst allowedChatId = Number($env.RUNSTATS_TELEGRAM_CHAT_ID ?? '0');\nconst isAllowedChat = allowedChatId === 0 || chatId === allowedChatId;\nconst isFit = Boolean(document && fileName.toLowerCase().endsWith('.fit'));\nconst workspaceRoot = $env.RUNSTATS_WORKSPACE_ROOT || 'C:\\\\RunStatsAutomation';\nconst fallbackName = `upload_${Date.now()}.fit`;\nconst processingPath = `${workspaceRoot}\\\\processing\\\\${fileName || fallbackName}`;\nreturn [{ json: { chatId, fileId: document?.file_id ?? null, fileName, isFit, isAllowedChat, processingPath, workspaceRoot } }];"
+      }
+    },
+    {
+      "id": "is-valid-fit",
+      "name": "Is Valid FIT Upload?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isFit && $json.isAllowedChat }}",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-upload",
+      "name": "Reject Upload",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        460
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "Send a .FIT document from the approved Telegram chat to start processing."
+      }
+    },
+    {
+      "id": "get-telegram-file",
+      "name": "Get Telegram File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        220
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "fileId": "={{ $json.fileId }}"
+      }
+    },
+    {
+      "id": "download-fit-binary",
+      "name": "Download FIT Binary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1280,
+        220
+      ],
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot{{$env.TELEGRAM_BOT_TOKEN}}/{{$json.file_path}}",
+        "responseFormat": "file",
+        "options": {}
+      }
+    },
+    {
+      "id": "write-fit-file",
+      "name": "Write FIT File",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        220
+      ],
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $('Normalize FIT Upload').item.json.processingPath }}",
+        "dataPropertyName": "data"
+      }
+    },
+    {
+      "id": "run-runstats-automation",
+      "name": "Run RunStats Automation",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        220
+      ],
+      "parameters": {
+        "command": "=runstats-automation --input \"{{$('Normalize FIT Upload').item.json.processingPath}}\" --workspace \"{{$('Normalize FIT Upload').item.json.workspaceRoot}}\" --template glass_slab"
+      }
+    },
+    {
+      "id": "parse-automation-json",
+      "name": "Parse Automation JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2060,
+        220
+      ],
+      "parameters": {
+        "jsCode": "const stdout = $json.stdout ?? '';\nconst payload = JSON.parse(stdout);\nreturn [{ json: { ...payload, chatId: $('Normalize FIT Upload').item.json.chatId, processingPath: $('Normalize FIT Upload').item.json.processingPath } }];"
+      }
+    },
+    {
+      "id": "is-success",
+      "name": "Is Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "success"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "is-duplicate",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2580,
+        360
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "duplicate"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "read-rendered-png",
+      "name": "Read Rendered PNG",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2580,
+        120
+      ],
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $json.output_path }}"
+      }
+    },
+    {
+      "id": "send-render",
+      "name": "Send Render",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        120
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendDocument",
+        "chatId": "={{ $json.chatId }}",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "={{ $json.caption }}"
+        }
+      }
+    },
+    {
+      "id": "send-duplicate-message",
+      "name": "Send Duplicate Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        320
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "This FIT activity was already processed."
+      }
+    },
+    {
+      "id": "send-error-message",
+      "name": "Send Error Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        500
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "=RunStats could not render this FIT file. {{$json.error || 'Check n8n logs.'}}"
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize FIT Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize FIT Upload": {
+      "main": [
+        [
+          {
+            "node": "Is Valid FIT Upload?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Valid FIT Upload?": {
+      "main": [
+        [
+          {
+            "node": "Get Telegram File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Telegram File": {
+      "main": [
+        [
+          {
+            "node": "Download FIT Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download FIT Binary": {
+      "main": [
+        [
+          {
+            "node": "Write FIT File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write FIT File": {
+      "main": [
+        [
+          {
+            "node": "Run RunStats Automation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run RunStats Automation": {
+      "main": [
+        [
+          {
+            "node": "Parse Automation JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Automation JSON": {
+      "main": [
+        [
+          {
+            "node": "Is Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Success?": {
+      "main": [
+        [
+          {
+            "node": "Read Rendered PNG",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Rendered PNG": {
+      "main": [
+        [
+          {
+            "node": "Send Render",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Send Duplicate Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

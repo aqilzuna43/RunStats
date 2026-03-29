@@ -16,6 +16,18 @@ Installed console entrypoint:
 runstats --auto
 ```
 
+Automation console entrypoint:
+
+```bash
+runstats-automation --input C:\RunStatsAutomation\processing\22321337482_ACTIVITY.fit
+```
+
+Direct Telegram bot entrypoint:
+
+```bash
+runstats-telegram-bot --chat-id 535004713 --workspace C:\RunStatsAutomation
+```
+
 ## Current Template Inventory
 
 The code currently exposes 8 template names in [`runstats/templates.py`](./runstats/templates.py):
@@ -56,12 +68,16 @@ Key files:
 
 - [`plot_gpx.py`](./plot_gpx.py): thin script wrapper
 - [`runstats/cli.py`](./runstats/cli.py): CLI flow and template selection
+- [`runstats/automation.py`](./runstats/automation.py): JSON-emitting automation entrypoint for n8n/Telegram
+- [`runstats/telegram_bot.py`](./runstats/telegram_bot.py): lightweight Telegram polling bot runner
 - [`runstats/ingest.py`](./runstats/ingest.py): FIT/GPX parsing
 - [`runstats/models.py`](./runstats/models.py): immutable activity models and cached derived data
 - [`runstats/render.py`](./runstats/render.py): route plotting
 - [`runstats/templates.py`](./runstats/templates.py): template renderers
 - [`runstats/template_support.py`](./runstats/template_support.py): shared figure/text/font helpers
 - [`tests/test_metrics.py`](./tests/test_metrics.py): metrics and model tests
+- [`tests/test_automation.py`](./tests/test_automation.py): automation command and dedupe tests
+- [`tests/test_telegram_bot.py`](./tests/test_telegram_bot.py): Telegram bot workflow tests
 - [`tests/test_package.py`](./tests/test_package.py): import-light package regression test
 
 Design reference:

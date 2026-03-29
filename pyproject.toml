@@ -17,6 +17,8 @@ dependencies = [
 
 [project.scripts]
 runstats = "runstats.cli:main"
+runstats-automation = "runstats.automation:main"
+runstats-telegram-bot = "runstats.telegram_bot:main"
 
 [tool.setuptools]
 packages = ["runstats"]
