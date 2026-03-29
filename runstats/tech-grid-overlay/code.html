@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-primary": "#516700",
+              "surface": "#0e0e0e",
+              "tertiary-fixed": "#ffffff",
+              "secondary-container": "#b02f00",
+              "on-tertiary": "#5e5f60",
+              "on-secondary-fixed": "#661700",
+              "surface-dim": "#0e0e0e",
+              "surface-bright": "#2c2c2c",
+              "on-background": "#ffffff",
+              "tertiary-dim": "#ebebeb",
+              "primary": "#f3ffca",
+              "on-tertiary-fixed": "#4f5051",
+              "tertiary-fixed-dim": "#f0f1f1",
+              "surface-container-highest": "#262626",
+              "on-surface": "#ffffff",
+              "on-primary": "#516700",
+              "primary-fixed-dim": "#beee00",
+              "outline-variant": "#484847",
+              "on-tertiary-fixed-variant": "#6c6d6e",
+              "background": "#0e0e0e",
+              "tertiary-container": "#ebebeb",
+              "tertiary": "#f9f9f9",
+              "surface-container-lowest": "#000000",
+              "secondary-dim": "#ff734a",
+              "primary-dim": "#beee00",
+              "on-secondary-fixed-variant": "#982700",
+              "secondary": "#ff734a",
+              "surface-container-high": "#20201f",
+              "on-tertiary-container": "#555757",
+              "primary-fixed": "#cafd00",
+              "error": "#ff7351",
+              "surface-variant": "#262626",
+              "error-container": "#b92902",
+              "on-secondary-container": "#fff6f4",
+              "outline": "#767575",
+              "error-dim": "#d53d18",
+              "secondary-fixed-dim": "#ffb19b",
+              "on-error": "#450900",
+              "inverse-surface": "#fcf9f8",
+              "on-primary-container": "#4a5e00",
+              "surface-tint": "#f3ffca",
+              "primary-container": "#cafd00",
+              "on-surface-variant": "#adaaaa",
+              "on-primary-fixed-variant": "#526900",
+              "surface-container-low": "#131313",
+              "surface-container": "#1a1a1a",
+              "secondary-fixed": "#ffc4b4",
+              "inverse-on-surface": "#565555",
+              "on-secondary": "#430c00",
+              "on-primary-fixed": "#3a4a00",
+              "on-error-container": "#ffd2c8"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .tech-grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glass-panel {
+            background: rgba(14, 14, 14, 0.4);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .kinetic-path {
+            stroke-dasharray: 8 4;
+            filter: drop-shadow(0 0 8px rgba(243, 255, 202, 0.4));
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body h-screen w-full flex flex-col overflow-hidden relative">
+<!-- Background Layer with Photo & Grid Overlay -->
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-black/40 z-10"></div>
+<img class="w-full h-full object-cover" data-alt="First-person perspective of an urban runner on a sleek Amsterdam bridge at twilight with city lights blurred in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6SuOCSIvm24C34J_GueqviD5jFQx6IKdazmcIE9fx15RiJrwU1HubCuhoeVk6zAOGUikYdCmzTlvJ7CIKlUWgQTx3SF_Z0ko2xzfP1WNJUD5oZD2p-o6FGGXTTiBYVBn8M61f89WkIfD_gxl-s4fVpTmuf5ZsmBeDACVSwL2Bm856BcAx6lzDFEQz6SJ9kMO5PXOoHfr3jPUzKzVxr4jz0X7qk5oJhiBGdhwobMsZ7kF7ITaF9F29N9nkCNM_zdOK1K2YGkGVCPK6"/>
+<div class="absolute inset-0 tech-grid-bg z-20"></div>
+</div>
+<!-- Top Navigation Shell (TopAppBar) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-transparent">
+<button class="text-white/60 hover:opacity-80 transition-opacity scale-95 active:duration-150">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="flex flex-col items-center">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[1rem] text-primary">location_on</span>
+<span class="font-['Space_Grotesk'] font-medium tracking-tight text-[#f3ffca]">AMSTERDAM, NL</span>
+</div>
+</div>
+<button class="text-white/60 hover:opacity-80 transition-opacity scale-95 active:duration-150">
+<span class="material-symbols-outlined">share</span>
+</button>
+</header>
+<!-- Main Kinetic Canvas -->
+<main class="flex-1 relative z-30 flex flex-col justify-center items-center px-6 pt-20 pb-32">
+<!-- Center Route Visualization -->
+<div class="w-full max-w-sm aspect-square flex items-center justify-center relative mb-8">
+<svg class="w-full h-full opacity-90" viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<path class="kinetic-path" d="M40,160 C60,140 140,180 160,100 C170,60 120,40 100,60 C80,80 60,40 40,40" fill="none" stroke="#f3ffca" stroke-width="3"></path>
+<circle cx="40" cy="160" fill="#f3ffca" r="4"></circle>
+<circle class="animate-pulse" cx="40" cy="40" fill="#f3ffca" r="6"></circle>
+</svg>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+<div class="text-[0.625rem] font-bold tracking-[0.2em] text-white/30 uppercase">Live GPS Tracking</div>
+</div>
+</div>
+<!-- Dashboard Stat Section -->
+<div class="w-full max-w-md space-y-4">
+<!-- Hero Metric Card -->
+<div class="glass-panel p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary/30"></div>
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.1em] text-white/50 uppercase mb-1">Total Distance</span>
+<div class="flex items-baseline gap-2">
+<h1 class="font-headline text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-primary to-primary-fixed-dim leading-none">10.50</h1>
+<span class="font-headline text-2xl font-medium text-primary-dim uppercase">KM</span>
+</div>
+</div>
+<!-- Secondary Stats Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-panel p-5 rounded-xl flex flex-col items-start relative">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-secondary text-lg">timer</span>
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.1em] text-white/40 uppercase">Pace</span>
+</div>
+<div class="font-headline text-3xl font-light text-white leading-none">
+                        05:30 <span class="text-sm font-medium text-white/30 uppercase">/KM</span>
+</div>
+</div>
+<div class="glass-panel p-5 rounded-xl flex flex-col items-start relative">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-secondary text-lg">hourglass_empty</span>
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.1em] text-white/40 uppercase">Time</span>
+</div>
+<div class="font-headline text-3xl font-light text-white leading-none">
+                        00:57:45
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Shell (BottomNavBar) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#0e0e0e]/40 backdrop-blur-xl rounded-t-2xl shadow-[0px_20px_40px_rgba(0,0,0,0.15)]">
+<!-- Inactive Tab: Stats -->
+<div class="flex flex-col items-center justify-center text-white/50 px-4 py-2 hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined mb-1">monitoring</span>
+<span class="font-['Manrope'] text-[0.6875rem] font-bold tracking-[0.1em] uppercase">STATS</span>
+</div>
+<!-- Active Tab: Route -->
+<div class="flex flex-col items-center justify-center text-[#f3ffca] bg-[#f3ffca]/10 rounded-xl px-4 py-2 cursor-pointer active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined mb-1">polyline</span>
+<span class="font-['Manrope'] text-[0.6875rem] font-bold tracking-[0.1em] uppercase">ROUTE</span>
+</div>
+<!-- Inactive Tab: Share -->
+<div class="flex flex-col items-center justify-center text-white/50 px-4 py-2 hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined mb-1">ios_share</span>
+<span class="font-['Manrope'] text-[0.6875rem] font-bold tracking-[0.1em] uppercase">SHARE</span>
+</div>
+</nav>
+<!-- Technical Scanlines Overlay (Visual Texture Only) -->
+<div class="pointer-events-none fixed inset-0 z-40 opacity-[0.03]" style="background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%;"></div>
+</body></html>

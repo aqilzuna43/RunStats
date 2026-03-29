@@ -18,20 +18,26 @@ runstats --auto
 
 ## Current Template Inventory
 
-The code currently exposes 5 template names in [`runstats/templates.py`](./runstats/templates.py):
+The code currently exposes 8 template names in [`runstats/templates.py`](./runstats/templates.py):
 
 - `story_overlay`
 - `clean_card`
 - `glass_slab`
 - `clipboard_card`
 - `neon_split`
+- `ghost_overlay`
+- `kinetic_glass`
+- `neon_data_story`
 
-In practice, the 4 newer card-style exports are:
+In practice, the newer stylized exports are:
 
 - `clean_card`
 - `glass_slab`
 - `clipboard_card`
 - `neon_split`
+- `ghost_overlay`
+- `kinetic_glass`
+- `neon_data_story`
 
 Most recent verified FIT input:
 

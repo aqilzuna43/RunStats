@@ -18,6 +18,10 @@ _TEMPLATE_LABELS = [
     ("glass_slab", "Glass Slab - Frosted glass with map peek-through"),
     ("clipboard_card", "Clipboard Card - Stacked stat rows, orange accent"),
     ("neon_split", "Neon Split - Dark card with gradient accent bar"),
+    ("ghost_overlay", "Ghost Overlay - Minimal dark route with glass footer"),
+    ("kinetic_glass", "Kinetic Glass - Editorial glass card with neon route"),
+    ("neon_data_story", "Neon Data Story - Stitch-inspired Instagram story overlay"),
+    ("minimalist_overlay", "Minimalist Overlay - Left-aligned editorial lime/coral"),
 ]
 
 
@@ -27,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", help="Output PNG path.")
     parser.add_argument(
         "--template",
-        default="story_overlay",
+        default=None,
         choices=TEMPLATE_NAMES,
         help="Template to render.",
     )
@@ -147,11 +151,11 @@ def _resolve_input(explicit_input: str | None, search_dir: str, auto_select: boo
         print(f"Invalid choice. Enter a number between 1 and {len(files)}.")
 
 
-def _resolve_template(explicit: str, auto_select: bool) -> str:
-    if explicit != "story_overlay":
+def _resolve_template(explicit: str | None, auto_select: bool) -> str:
+    if explicit is not None:
         return explicit
     if auto_select or not sys.stdin.isatty():
-        return explicit
+        return "story_overlay"
 
     print("\n--- Overlay templates ---")
     for index, (_, desc) in enumerate(_TEMPLATE_LABELS, start=1):

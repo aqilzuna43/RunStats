@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#982700",
+              "primary-fixed": "#cafd00",
+              "surface-container-high": "#20201f",
+              "surface": "#0e0e0e",
+              "secondary-container": "#b02f00",
+              "surface-container-highest": "#262626",
+              "on-error": "#450900",
+              "background": "#0e0e0e",
+              "tertiary-fixed-dim": "#f0f1f1",
+              "surface-dim": "#0e0e0e",
+              "surface-tint": "#f3ffca",
+              "outline": "#767575",
+              "surface-variant": "#262626",
+              "on-primary-container": "#4a5e00",
+              "surface-container-low": "#131313",
+              "on-error-container": "#ffd2c8",
+              "on-secondary-fixed": "#661700",
+              "secondary": "#ff734a",
+              "tertiary": "#f9f9f9",
+              "on-tertiary-container": "#555757",
+              "surface-container": "#1a1a1a",
+              "on-tertiary-fixed": "#4f5051",
+              "on-tertiary": "#5e5f60",
+              "surface-container-lowest": "#000000",
+              "secondary-fixed": "#ffc4b4",
+              "secondary-fixed-dim": "#ffb19b",
+              "on-primary": "#516700",
+              "inverse-surface": "#fcf9f8",
+              "outline-variant": "#484847",
+              "inverse-primary": "#516700",
+              "primary-container": "#cafd00",
+              "inverse-on-surface": "#565555",
+              "on-surface-variant": "#adaaaa",
+              "tertiary-dim": "#ebebeb",
+              "tertiary-container": "#ebebeb",
+              "tertiary-fixed": "#ffffff",
+              "on-secondary-container": "#fff6f4",
+              "error-dim": "#d53d18",
+              "primary": "#f3ffca",
+              "on-secondary": "#430c00",
+              "surface-bright": "#2c2c2c",
+              "on-surface": "#ffffff",
+              "secondary-dim": "#ff734a",
+              "on-primary-fixed": "#3a4a00",
+              "error-container": "#b92902",
+              "on-background": "#ffffff",
+              "on-primary-fixed-variant": "#526900",
+              "on-tertiary-fixed-variant": "#6c6d6e",
+              "error": "#ff7351",
+              "primary-dim": "#beee00",
+              "primary-fixed-dim": "#beee00"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-grid {
+            background-size: 33.33% 20%;
+            background-image: 
+                linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+        }
+        .text-glow-primary {
+            text-shadow: 0 0 15px rgba(243, 255, 202, 0.4);
+        }
+        .path-glow {
+            filter: drop-shadow(0 0 8px rgba(243, 255, 202, 0.6));
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-black text-on-surface font-body overflow-hidden">
+<!-- 9:16 Story Canvas -->
+<div class="relative w-full h-[884px] max-w-[497px] mx-auto overflow-hidden bg-surface">
+<!-- Background Imagery (Simulating user content) -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover opacity-60 grayscale" data-alt="dramatic cinematic wide shot of a lone athlete running on a modern asphalt road through a canyon at twilight with deep blue shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDN75aQ_Y7ynUnt_tQW86YjGQ4V3NUAtxG71uVVVBlrAAv6edvR7hlxgEYIjEirPJ-RKdkZ3dtXhrkYsjJUbo-thhYgc87bMMXDJhpgZtOE6m07n0SHPu58Qa9RHHES_ySypmdmkO3rmhC6WoMKmWLMnAIbgAHldBt8jYp_nA_cpZkmcRq6UEzQI5WfOsItrEzRfxTMDqOuzwMcg-AxDvaUiZL0Sgl1qNWDJk8qLhEOsTTl82w0usLcexmk27t5dzcaUOxHHrq9de0-"/>
+<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
+</div>
+<!-- Technical Grid Overlay -->
+<div class="absolute inset-0 z-10 kinetic-grid pointer-events-none"></div>
+<!-- Top App Bar (Shared Component Logic) -->
+<header class="absolute top-0 left-0 right-0 z-20 flex justify-center items-center w-full px-8 pt-12 pb-4">
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#f3ffca] text-sm" data-icon="location_on">location_on</span>
+<h1 class="font-headline text-[0.6875rem] font-bold tracking-[0.1em] text-[#f3ffca] uppercase">LOS ANGELES, CA</h1>
+</div>
+<span class="font-label text-[0.5rem] tracking-[0.2em] text-white/40 uppercase">MAY 24 / 06:42 AM</span>
+</div>
+</header>
+<!-- Kinetic Map/Path Section -->
+<div class="absolute inset-0 z-10 flex items-center justify-center px-12">
+<div class="w-full h-full relative flex items-center justify-center">
+<!-- SVG Route Path -->
+<svg class="w-full h-3/5 path-glow overflow-visible" viewbox="0 0 200 400">
+<path d="M100 350 L80 300 L120 250 L40 180 L160 120 L100 50" fill="none" stroke="#f3ffca" stroke-dasharray="1 8" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Current Position Pulse -->
+<circle cx="100" cy="50" fill="#f3ffca" r="4"></circle>
+<circle cx="100" cy="50" fill="#f3ffca" opacity="0.3" r="8"></circle>
+</svg>
+<!-- Map Context Hint (Invisible but present for data attributes) -->
+<div class="hidden" data-location="Los Angeles" style=""></div>
+</div>
+</div>
+<!-- Hero Metrics Container (Bottom Section) -->
+<div class="absolute bottom-0 left-0 right-0 z-30 p-8 pb-16 flex flex-col gap-8">
+<!-- Primary Hero Metric -->
+<div class="flex flex-col items-start">
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.15em] text-white/60 mb-1 uppercase">TOTAL DISTANCE</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-[4.5rem] leading-none font-black text-glow-primary bg-gradient-to-br from-primary to-primary-dim bg-clip-text text-transparent tracking-tighter italic">10.50</span>
+<span class="font-headline text-xl font-bold text-primary">KM</span>
+</div>
+</div>
+<!-- Secondary High-Intensity Metrics -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Pace Card -->
+<div class="backdrop-blur-xl bg-surface-container-highest/40 rounded-lg p-5 border-l-2 border-secondary flex flex-col justify-between aspect-square">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="speed">speed</span>
+<span class="font-label text-[0.625rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase">PACE</span>
+</div>
+<div>
+<span class="font-headline text-3xl font-bold text-secondary italic">05:30</span>
+<span class="block font-label text-[0.5rem] text-secondary/60 mt-1 uppercase">MIN / KM</span>
+</div>
+</div>
+<!-- Time Card -->
+<div class="backdrop-blur-xl bg-surface-container-highest/40 rounded-lg p-5 border-l-2 border-primary flex flex-col justify-between aspect-square">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="timer">timer</span>
+<span class="font-label text-[0.625rem] font-bold tracking-[0.1em] text-on-surface-variant uppercase">TIME</span>
+</div>
+<div>
+<span class="font-headline text-3xl font-bold text-primary italic">57:45</span>
+<span class="block font-label text-[0.5rem] text-primary/60 mt-1 uppercase">ELAPSED</span>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="flex justify-between items-center pt-4 border-t border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
+<img class="w-full h-full object-cover" data-alt="portrait of a focused female athlete with sweat on skin, dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWHKOhWBVlf44zMEzB_nMaXKAyzHLgu_YEFASlxyf0iIlXtaq5Y243DShD9Lb8-7ZFJ0D3fczNbCe9qscKPxdkBHYhodjBPW84YhIZm7eNOiv9iEY3dVtx_mFSMYgrL-A9_FL1v2mm1OWJffgEvhF0mD9IFGfa9RS8k8qlztBk8ex1RSGfbMSmx2FkyTtUikxXE9rag2WHY3AO9SMk1M3ZXRYVnfNzBPnE05wkhp4nXx8tJtX1eftNH7ffAhhhW19WIAVIOhwb0DAD"/>
+</div>
+<div>
+<p class="font-headline text-[0.75rem] font-bold leading-none text-white tracking-wide">ELARA VANCE</p>
+<p class="font-label text-[0.5rem] text-white/40 uppercase mt-1">PRO ATHLETE / TEAM LIME</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label text-[0.5rem] text-white/40 uppercase">ELEVATION GAIN</span>
+<span class="font-headline text-sm font-bold text-white tracking-tight">342 M</span>
+</div>
+</div>
+</div>
+<!-- Decorative Tech Elements -->
+<div class="absolute top-24 left-6 z-20 flex flex-col gap-6 opacity-30">
+<div class="h-16 w-[1px] bg-primary"></div>
+<span class="font-headline text-[0.5rem] -rotate-90 origin-left text-primary tracking-widest">PERFORMANCE_V2.0</span>
+</div>
+<div class="absolute bottom-24 right-6 z-20 flex flex-col items-end gap-2 opacity-30">
+<span class="material-symbols-outlined text-white text-xs" data-icon="battery_horiz_075">battery_horiz_075</span>
+<span class="font-label text-[0.4rem] text-white tracking-[0.3em]">REC ON</span>
+</div>
+</div>
+</body></html>

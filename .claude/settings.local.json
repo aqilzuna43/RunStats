@@ -10,7 +10,14 @@
       "Bash(python3 plot_gpx.py --help)",
       "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template glass_slab --output glass_slab.png --auto)",
       "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template clipboard_card --output clipboard_card.png --auto)",
-      "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template neon_split --output neon_split.png --auto)"
+      "Bash(python3 plot_gpx.py --input 22321337482_ACTIVITY.fit --template neon_split --output neon_split.png --auto)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "WebSearch",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:antigravity.codes)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(claude mcp:*)",
+      "WebFetch(domain:stitch.withgoogle.com)"
     ]
   }
 }

@@ -10,7 +10,18 @@ from .models import ActivityData, ActivitySummary
 
 
 DEFAULT_TITLE = "RELENTLESS"
-TEMPLATE_NAMES = ("story_overlay", "clean_card", "glass_slab", "clipboard_card", "neon_split")
+TEMPLATE_NAMES = (
+    "story_overlay",
+    "clean_card",
+    "glass_slab",
+    "clipboard_card",
+    "neon_split",
+    "ghost_overlay",
+    "kinetic_glass",
+    "neon_data_story",
+    "minimalist_overlay",
+    "tech_grid_overlay",
+)
 
 
 @dataclass(frozen=True)
@@ -38,7 +49,7 @@ def render_template(
 ) -> None:
     if template_name == "story_overlay":
         from .templates_basic import render_story_overlay
-        render_story_overlay(activity, output_path, route_mode, summary, title)
+        render_story_overlay(activity, output_path, route_mode, summary, title, location)
         return
 
     if template_name == "clean_card":
@@ -59,6 +70,31 @@ def render_template(
     if template_name == "neon_split":
         from .templates_neon import render_neon_split
         render_neon_split(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "ghost_overlay":
+        from .templates_ghost import render_ghost_overlay
+        render_ghost_overlay(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "kinetic_glass":
+        from .templates_kinetic import render_kinetic_glass
+        render_kinetic_glass(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "neon_data_story":
+        from .templates_stitch import render_neon_data_story
+        render_neon_data_story(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "minimalist_overlay":
+        from .templates_minimalist import render_minimalist_overlay
+        render_minimalist_overlay(activity, output_path, route_mode, summary, location)
+        return
+
+    if template_name == "tech_grid_overlay":
+        from .templates_tech_grid import render_tech_grid_overlay
+        render_tech_grid_overlay(activity, output_path, route_mode, summary, location)
         return
 
     raise ValueError(f"Unknown template: {template_name}")

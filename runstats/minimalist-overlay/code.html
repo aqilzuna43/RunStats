@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#982700",
+              "primary-fixed": "#cafd00",
+              "surface-container-high": "#20201f",
+              "surface": "#0e0e0e",
+              "secondary-container": "#b02f00",
+              "surface-container-highest": "#262626",
+              "on-error": "#450900",
+              "background": "#0e0e0e",
+              "tertiary-fixed-dim": "#f0f1f1",
+              "surface-dim": "#0e0e0e",
+              "surface-tint": "#f3ffca",
+              "outline": "#767575",
+              "surface-variant": "#262626",
+              "on-primary-container": "#4a5e00",
+              "surface-container-low": "#131313",
+              "on-error-container": "#ffd2c8",
+              "on-secondary-fixed": "#661700",
+              "secondary": "#ff734a",
+              "tertiary": "#f9f9f9",
+              "on-tertiary-container": "#555757",
+              "surface-container": "#1a1a1a",
+              "on-tertiary-fixed": "#4f5051",
+              "on-tertiary": "#5e5f60",
+              "surface-container-lowest": "#000000",
+              "secondary-fixed": "#ffc4b4",
+              "secondary-fixed-dim": "#ffb19b",
+              "on-primary": "#516700",
+              "inverse-surface": "#fcf9f8",
+              "outline-variant": "#484847",
+              "inverse-primary": "#516700",
+              "primary-container": "#cafd00",
+              "inverse-on-surface": "#565555",
+              "on-surface-variant": "#adaaaa",
+              "tertiary-dim": "#ebebeb",
+              "tertiary-container": "#ebebeb",
+              "tertiary-fixed": "#ffffff",
+              "on-secondary-container": "#fff6f4",
+              "error-dim": "#d53d18",
+              "primary": "#f3ffca",
+              "on-secondary": "#430c00",
+              "surface-bright": "#2c2c2c",
+              "on-surface": "#ffffff",
+              "secondary-dim": "#ff734a",
+              "on-primary-fixed": "#3a4a00",
+              "error-container": "#b92902",
+              "on-background": "#ffffff",
+              "on-primary-fixed-variant": "#526900",
+              "on-tertiary-fixed-variant": "#6c6d6e",
+              "error": "#ff7351",
+              "primary-dim": "#beee00",
+              "primary-fixed-dim": "#beee00"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-path {
+            stroke-dasharray: 4 4;
+            filter: drop-shadow(0 0 4px rgba(255, 115, 74, 0.4));
+        }
+        .text-gradient-primary {
+            background: linear-gradient(to bottom, #f3ffca, #cafd00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stats-blur-bg {
+            backdrop-filter: blur(12px);
+            background: rgba(14, 14, 14, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body overflow-hidden">
+<!-- Story Canvas (9:16 Aspect Ratio Simulation) -->
+<div class="relative w-full h-screen max-w-[430px] mx-auto overflow-hidden shadow-2xl">
+<!-- Background Imagery (Dynamic Context) -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="dramatic wide angle shot of a long straight road stretching into a mountain range during a moody blue hour sunset" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY0D_QZnHtpa8Zs2PGRVUqJLIMpx9j8gDLxqvqRfD0Yv6_OmThMcigLFft1OREYDQ_TFrqqcOSSSh9RSVfiqE7oY6jaJ-gjySFlfB4v42Ehe31VNrVXQbbSU7CuuuOmchY7jCQuaemIiGI59TQAGiJb_PiCDVNio380UGFB0kUfyUOFjwbZcgQt4Ul6MxMyt2vzwV1nFhr95cNxmYSnoxbklgGwgelHvAIbne-Ecr5nAEZlqbiJ3xbROxjUSy2yCW1xyI_MNdrvhpB"/>
+<!-- Tonal Overlay for Legibility -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
+</div>
+<!-- Header Content: Shared Component (TopAppBar Logic) -->
+<header class="relative z-10 flex justify-center items-center w-full px-8 pt-12 pb-4">
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center gap-1.5 text-[#f3ffca]">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span class="font-headline text-[0.6875rem] font-bold tracking-[0.2em] uppercase">LOS ANGELES, CA</span>
+</div>
+<span class="text-white/60 font-label text-[0.625rem] tracking-[0.3em] uppercase">14 OCTOBER 2023</span>
+</div>
+</header>
+<!-- Kinetic Map Element (The Center Pivot) -->
+<div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none px-12">
+<div class="w-full h-1/2 relative opacity-90">
+<!-- Abstract Route Path -->
+<svg class="w-full h-full overflow-visible" data-location="Los Angeles" viewbox="0 0 200 300">
+<path class="kinetic-path" d="M40,250 C60,200 20,180 80,140 C140,100 120,60 160,20" fill="none" stroke="#ff734a" stroke-width="1.5"></path>
+<!-- Origin Point -->
+<circle cx="40" cy="250" fill="#ff734a" r="3"></circle>
+<!-- Current Position -->
+<circle class="animate-pulse" cx="160" cy="20" fill="#f3ffca" r="4"></circle>
+</svg>
+</div>
+</div>
+<!-- Main Metrics: Kinetic Editorial Layout -->
+<main class="absolute bottom-0 left-0 w-full z-20 p-8 pb-16 flex flex-col items-start space-y-2">
+<!-- Hero Metric: Distance -->
+<div class="relative group">
+<div class="flex items-baseline gap-1">
+<h1 class="font-headline text-[7rem] leading-[0.8] font-black tracking-tighter text-gradient-primary">
+                        10.50
+                    </h1>
+<span class="font-headline text-2xl font-bold text-primary translate-y-[-2rem]">KM</span>
+</div>
+<div class="h-px w-24 bg-primary/30 mt-4"></div>
+</div>
+<!-- Secondary Metrics: Magazine Style -->
+<div class="grid grid-cols-2 gap-x-12 pt-6 w-full">
+<!-- Pace Metric -->
+<div class="flex flex-col">
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.15em] text-white/40 mb-1">PACE</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline text-3xl font-medium text-white">05:30</span>
+<span class="font-label text-[0.625rem] text-secondary font-bold">MIN/KM</span>
+</div>
+</div>
+<!-- Time Metric -->
+<div class="flex flex-col border-l border-white/10 pl-8">
+<span class="font-label text-[0.6875rem] font-bold tracking-[0.15em] text-white/40 mb-1">TIME</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline text-3xl font-medium text-white">57:45</span>
+</div>
+</div>
+</div>
+<!-- Intensity Visualizer (Thin Progress) -->
+<div class="w-full pt-10">
+<div class="flex justify-between items-end mb-2">
+<span class="font-label text-[0.625rem] tracking-[0.1em] text-white/60">PERFORMANCE TARGET</span>
+<span class="font-label text-[0.625rem] font-bold text-primary">84%</span>
+</div>
+<div class="h-[2px] w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-primary w-[84%]"></div>
+</div>
+</div>
+</main>
+<!-- Signature Brand Mark -->
+<div class="absolute bottom-8 right-8 z-30 flex items-center gap-2 rotate-90 origin-bottom-right opacity-30">
+<span class="font-headline text-[0.5rem] tracking-[0.5em] font-bold text-white uppercase">KINETIC PERFORMANCE LAB</span>
+</div>
+</div>
+</body></html>
