@@ -10,6 +10,7 @@ from runstats.automation import resolve_automation_paths
 from runstats.telegram_bot import (
     IncomingDocument,
     TelegramBotConfig,
+    build_selection_status_message,
     build_multipart_body,
     build_template_prompt,
     extract_document,
@@ -95,9 +96,11 @@ class TelegramBotTests(unittest.TestCase):
 
             handle_update(update=self._fit_update(), config=self._config(temp_dir), client=client, paths=paths)
 
-            self.assertEqual(client.messages, [(535004713, build_template_prompt())])
+            self.assertEqual(client.messages, [(535004713, build_template_prompt(selected_templates=[]))])
             pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
             self.assertIn("535004713", pending)
+            self.assertEqual(pending["535004713"]["selected_templates"], [])
+            self.assertEqual(pending["535004713"]["selection_stage"], "awaiting_templates")
 
     def test_handle_update_rejects_non_fit_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -117,58 +120,150 @@ class TelegramBotTests(unittest.TestCase):
 
             self.assertEqual(client.messages, [(535004713, "Send a .FIT document to this bot to start processing.")])
 
-    def test_template_reply_success_sends_document_and_archives_fit(self) -> None:
+    def test_multiple_template_replies_accumulate_until_done(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = resolve_automation_paths(workspace_root=temp_dir)
             client = FakeTelegramClient()
             self._queue_pending_fit(temp_dir, client, paths)
 
-            result = self._result(
-                status="success",
-                output_path=str(Path(temp_dir) / "exports" / "glass_slab.png"),
-                caption="5.00 km | 25m 00s | 5:00 /km",
-            )
-            Path(result.output_path).parent.mkdir(parents=True, exist_ok=True)
-            Path(result.output_path).write_bytes(b"png")
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            handle_update(update=self._text_update("pro_analyst"), config=self._config(temp_dir), client=client, paths=paths)
 
-            with patch("runstats.telegram_bot.run_automation", return_value=result) as automation_mock:
-                handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertEqual(pending["535004713"]["selected_templates"], ["glass_slab", "pro_analyst"])
+            self.assertEqual(client.documents, [])
 
-            self.assertEqual(len(client.documents), 1)
-            self.assertEqual(automation_mock.call_args.kwargs["template"], "glass_slab")
-            archived = list((Path(temp_dir) / "processed").glob("*.fit"))
-            self.assertEqual(len(archived), 1)
-
-    def test_template_reply_duplicate_sends_message_and_archives_duplicate(self) -> None:
+    def test_duplicate_selection_reply_keeps_session_open(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = resolve_automation_paths(workspace_root=temp_dir)
             client = FakeTelegramClient()
             self._queue_pending_fit(temp_dir, client, paths)
 
-            with patch("runstats.telegram_bot.run_automation", return_value=self._result(status="duplicate")):
-                handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
 
-            self.assertIn((535004713, "This FIT activity was already processed for that template."), client.messages)
-            archived = list((Path(temp_dir) / "processed" / "duplicates").glob("*.fit"))
-            self.assertEqual(len(archived), 1)
+            self.assertIn((535004713, "glass_slab is already selected. Pick another template or send /done."), client.messages)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertEqual(pending["535004713"]["selected_templates"], ["glass_slab"])
 
-    def test_template_reply_error_sends_message_and_archives_failed_render(self) -> None:
+    def test_done_without_templates_prompts_again(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = resolve_automation_paths(workspace_root=temp_dir)
             client = FakeTelegramClient()
             self._queue_pending_fit(temp_dir, client, paths)
+
+            handle_update(update=self._text_update("/done"), config=self._config(temp_dir), client=client, paths=paths)
+
+            self.assertIn((535004713, "Choose at least one template before sending /done."), client.messages)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertIn("535004713", pending)
+
+    def test_done_with_multiple_templates_sends_documents_and_archives_fit_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = resolve_automation_paths(workspace_root=temp_dir)
+            client = FakeTelegramClient()
+            self._queue_pending_fit(temp_dir, client, paths)
+
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            handle_update(update=self._text_update("pro_analyst"), config=self._config(temp_dir), client=client, paths=paths)
+
+            outputs = [
+                str(Path(temp_dir) / "exports" / "glass_slab.png"),
+                str(Path(temp_dir) / "exports" / "pro_analyst.png"),
+            ]
+            for output in outputs:
+                Path(output).parent.mkdir(parents=True, exist_ok=True)
+                Path(output).write_bytes(b"png")
 
             with patch(
                 "runstats.telegram_bot.run_automation",
-                return_value=self._result(status="error", error="bad fit"),
+                side_effect=[
+                    self._result(status="success", template="glass_slab", output_path=outputs[0], caption="glass"),
+                    self._result(status="success", template="pro_analyst", output_path=outputs[1], caption="analyst"),
+                ],
+            ) as automation_mock:
+                handle_update(update=self._text_update("/done"), config=self._config(temp_dir), client=client, paths=paths)
+
+            self.assertEqual(
+                client.documents,
+                [
+                    (535004713, outputs[0], "glass"),
+                    (535004713, outputs[1], "analyst"),
+                ],
+            )
+            self.assertEqual([call.kwargs["template"] for call in automation_mock.call_args_list], ["glass_slab", "pro_analyst"])
+            self.assertEqual(len(list((Path(temp_dir) / "processed").glob("*.fit"))), 1)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertNotIn("535004713", pending)
+
+    def test_duplicate_result_resends_existing_png(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = resolve_automation_paths(workspace_root=temp_dir)
+            client = FakeTelegramClient()
+            self._queue_pending_fit(temp_dir, client, paths)
+
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+
+            output_path = str(Path(temp_dir) / "exports" / "glass_slab.png")
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_path).write_bytes(b"png")
+
+            with patch(
+                "runstats.telegram_bot.run_automation",
+                return_value=self._result(status="duplicate", template="glass_slab", output_path=output_path, caption="cached"),
             ):
-                handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+                handle_update(update=self._text_update("/done"), config=self._config(temp_dir), client=client, paths=paths)
 
-            self.assertIn((535004713, "RunStats could not render this FIT file. bad fit"), client.messages)
-            archived = list((Path(temp_dir) / "failed" / "render").glob("*.fit"))
-            self.assertEqual(len(archived), 1)
+            self.assertEqual(client.documents, [(535004713, output_path, "cached")])
+            self.assertEqual(len(list((Path(temp_dir) / "processed" / "duplicates").glob("*.fit"))), 1)
 
-    def test_invalid_template_reply_prompts_again(self) -> None:
+    def test_duplicate_missing_file_sends_note_and_continues(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = resolve_automation_paths(workspace_root=temp_dir)
+            client = FakeTelegramClient()
+            self._queue_pending_fit(temp_dir, client, paths)
+
+            handle_update(update=self._text_update("glass_slab"), config=self._config(temp_dir), client=client, paths=paths)
+            handle_update(update=self._text_update("pro_analyst"), config=self._config(temp_dir), client=client, paths=paths)
+
+            output_path = str(Path(temp_dir) / "exports" / "pro_analyst.png")
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_path).write_bytes(b"png")
+
+            with patch(
+                "runstats.telegram_bot.run_automation",
+                side_effect=[
+                    self._result(status="duplicate", template="glass_slab", output_path=str(Path(temp_dir) / "exports" / "missing.png")),
+                    self._result(status="success", template="pro_analyst", output_path=output_path, caption="fresh"),
+                ],
+            ):
+                handle_update(update=self._text_update("/done"), config=self._config(temp_dir), client=client, paths=paths)
+
+            self.assertIn(
+                (535004713, "glass_slab was already processed, but I could not find the saved PNG. Skipping it."),
+                client.messages,
+            )
+            self.assertEqual(client.documents, [(535004713, output_path, "fresh")])
+            self.assertEqual(len(list((Path(temp_dir) / "processed").glob("*.fit"))), 1)
+
+    def test_cancel_clears_pending_state_and_discards_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = resolve_automation_paths(workspace_root=temp_dir)
+            client = FakeTelegramClient()
+            self._queue_pending_fit(temp_dir, client, paths)
+
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            input_path = Path(pending["535004713"]["input_path"])
+            self.assertTrue(input_path.exists())
+
+            handle_update(update=self._text_update("/cancel"), config=self._config(temp_dir), client=client, paths=paths)
+
+            self.assertIn((535004713, "Cancelled this FIT upload. Send a new .FIT document when you're ready."), client.messages)
+            self.assertFalse(input_path.exists())
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertNotIn("535004713", pending)
+
+    def test_invalid_template_reply_prompts_again_and_keeps_session_open(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = resolve_automation_paths(workspace_root=temp_dir)
             client = FakeTelegramClient()
@@ -176,7 +271,15 @@ class TelegramBotTests(unittest.TestCase):
 
             handle_update(update=self._text_update("not-a-template"), config=self._config(temp_dir), client=client, paths=paths)
 
-            self.assertIn((535004713, "Pick one of the template names below after sending your FIT file."), client.messages)
+            self.assertIn((535004713, "Pick one or more template names below, then send /done when finished."), client.messages)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertEqual(pending["535004713"]["selected_templates"], [])
+
+    def test_template_selection_status_message_lists_choices(self) -> None:
+        self.assertEqual(
+            build_selection_status_message(["glass_slab", "pro_analyst"]),
+            "Selected templates: glass_slab, pro_analyst\nPick another template or send /done.",
+        )
 
     def test_build_multipart_body_contains_file_and_fields(self) -> None:
         body = build_multipart_body(
@@ -234,14 +337,21 @@ class TelegramBotTests(unittest.TestCase):
         client.messages.clear()
 
     @staticmethod
-    def _result(*, status: str, output_path: str | None = None, caption: str | None = None, error: str | None = None):
+    def _result(
+        *,
+        status: str,
+        template: str = "glass_slab",
+        output_path: str | None = None,
+        caption: str | None = None,
+        error: str | None = None,
+    ):
         from runstats.automation import AutomationResult
 
         return AutomationResult(
             status=status,
             input_path="input.fit",
             sha256="sha",
-            template="glass_slab",
+            template=template,
             output_path=output_path,
             distance_km=5.0,
             moving_time_s=1500.0,

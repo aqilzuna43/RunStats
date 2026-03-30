@@ -349,11 +349,13 @@ def handle_update(*, update: dict[str, Any], config: TelegramBotConfig, client: 
         "file_name": processing_path.name,
         "update_id": incoming.update_id,
         "created_at": utc_now_iso(),
+        "selected_templates": [],
+        "selection_stage": "awaiting_templates",
     }
     save_pending_requests(pending_path, pending_requests)
     client.send_message(
         incoming.chat_id,
-        build_template_prompt(),
+        build_template_prompt(selected_templates=[]),
         reply_markup=build_template_keyboard(),
     )
     append_bot_event(
@@ -367,20 +369,54 @@ def handle_text_message(
     *,
     chat_id: int,
     text: str,
-    pending_requests: dict[str, dict[str, str]],
+    pending_requests: dict[str, dict[str, Any]],
     pending_path: Path,
     config: TelegramBotConfig,
     client: TelegramBotClient,
     paths: AutomationPaths,
 ) -> bool:
     normalized = text.strip()
-    pending = pending_requests.get(str(chat_id))
+    pending = _get_pending_request(pending_requests, chat_id)
     if normalized.lower() == "/start":
-        client.send_message(chat_id, "Send a .FIT document, then choose a template.", reply_markup=build_template_keyboard())
+        client.send_message(
+            chat_id,
+            "Send a .FIT document, then choose one or more templates. Send /done when finished.",
+            reply_markup=build_template_keyboard(),
+        )
         return True
     if normalized.lower() == "/templates":
-        client.send_message(chat_id, build_template_prompt(), reply_markup=build_template_keyboard())
+        selected_templates = _get_selected_templates(pending) if pending is not None else None
+        client.send_message(
+            chat_id,
+            build_template_prompt(selected_templates=selected_templates),
+            reply_markup=build_template_keyboard(),
+        )
         return True
+    if normalized.lower() == "/done":
+        if pending is None:
+            client.send_message(chat_id, "Send a .FIT document first, then choose templates.", reply_markup=remove_keyboard_markup())
+            return True
+        return _finalize_pending_request(
+            chat_id=chat_id,
+            pending=pending,
+            pending_requests=pending_requests,
+            pending_path=pending_path,
+            config=config,
+            client=client,
+            paths=paths,
+        )
+    if normalized.lower() == "/cancel":
+        if pending is None:
+            client.send_message(chat_id, "There is no pending FIT upload to cancel.", reply_markup=remove_keyboard_markup())
+            return True
+        return _cancel_pending_request(
+            chat_id=chat_id,
+            pending=pending,
+            pending_requests=pending_requests,
+            pending_path=pending_path,
+            client=client,
+            paths=paths,
+        )
     if pending is None:
         return False
 
@@ -388,7 +424,7 @@ def handle_text_message(
     if template is None:
         client.send_message(
             chat_id,
-            "Pick one of the template names below after sending your FIT file.",
+            "Pick one or more template names below, then send /done when finished.",
             reply_markup=build_template_keyboard(),
         )
         return True
@@ -400,115 +436,195 @@ def handle_text_message(
         client.send_message(chat_id, "I could not find the pending FIT file. Send it again.", reply_markup=remove_keyboard_markup())
         return True
 
-    result = run_automation(
-        input_path=input_path,
-        template=template,
-        route_mode=config.route_mode,
-        workspace_root=paths.root,
-        title=config.title,
-        location=config.location,
-        no_geocode=config.no_geocode,
-    )
-    pending_requests.pop(str(chat_id), None)
-    save_pending_requests(pending_path, pending_requests)
-
-    if result.status == "success":
-        try:
-            client.send_document(chat_id, result.output_path, result.caption, reply_markup=remove_keyboard_markup())
-        except TelegramApiError as exc:
-            move_to_archive(input_path, paths.failed_delivery_dir)
-            append_bot_event(
-                paths.logs_dir / TELEGRAM_LOG_FILENAME,
-                "delivery_failed",
-                {"chat_id": chat_id, "input_path": str(input_path), "output_path": result.output_path, "error": str(exc)},
-            )
-            raise
-        move_to_archive(input_path, paths.processed_dir)
-        append_bot_event(
-            paths.logs_dir / TELEGRAM_LOG_FILENAME,
-            "sent_render",
-            {"chat_id": chat_id, "input_path": str(input_path), "output_path": result.output_path, "template": template},
+    selected_templates = _get_selected_templates(pending)
+    if template in selected_templates:
+        client.send_message(
+            chat_id,
+            f"{template} is already selected. Pick another template or send /done.",
+            reply_markup=build_template_keyboard(),
         )
         return True
 
-    if result.status == "duplicate":
-        client.send_message(chat_id, "This FIT activity was already processed for that template.", reply_markup=remove_keyboard_markup())
+    selected_templates.append(template)
+    pending["selected_templates"] = selected_templates
+    pending["selection_stage"] = "awaiting_templates"
+    pending_requests[str(chat_id)] = pending
+    save_pending_requests(pending_path, pending_requests)
+    client.send_message(
+        chat_id,
+        build_selection_status_message(selected_templates),
+        reply_markup=build_template_keyboard(),
+    )
+    append_bot_event(
+        paths.logs_dir / TELEGRAM_LOG_FILENAME,
+        "selected_template",
+        {"chat_id": chat_id, "template": template, "selected_templates": selected_templates},
+    )
+    return True
+
+
+def _get_pending_request(pending_requests: dict[str, dict[str, Any]], chat_id: int) -> dict[str, Any] | None:
+    pending = pending_requests.get(str(chat_id))
+    if not isinstance(pending, dict):
+        return None
+    normalized = dict(pending)
+    normalized["selected_templates"] = _get_selected_templates(normalized)
+    normalized["selection_stage"] = str(normalized.get("selection_stage") or "awaiting_templates")
+    return normalized
+
+
+def _get_selected_templates(pending: dict[str, Any] | None) -> list[str]:
+    if not isinstance(pending, dict):
+        return []
+    raw = pending.get("selected_templates")
+    if not isinstance(raw, list):
+        return []
+    return [str(value) for value in raw if isinstance(value, str)]
+
+
+def _finalize_pending_request(
+    *,
+    chat_id: int,
+    pending: dict[str, Any],
+    pending_requests: dict[str, dict[str, Any]],
+    pending_path: Path,
+    config: TelegramBotConfig,
+    client: TelegramBotClient,
+    paths: AutomationPaths,
+) -> bool:
+    selected_templates = _get_selected_templates(pending)
+    if not selected_templates:
+        client.send_message(
+            chat_id,
+            "Choose at least one template before sending /done.",
+            reply_markup=build_template_keyboard(),
+        )
+        return True
+
+    input_path = Path(str(pending.get("input_path", "")))
+    if not input_path.exists():
+        pending_requests.pop(str(chat_id), None)
+        save_pending_requests(pending_path, pending_requests)
+        client.send_message(chat_id, "I could not find the pending FIT file. Send it again.", reply_markup=remove_keyboard_markup())
+        return True
+
+    saw_success = False
+    resent_duplicate = False
+    saw_error = False
+
+    for template in selected_templates:
+        result = run_automation(
+            input_path=input_path,
+            template=template,
+            route_mode=config.route_mode,
+            workspace_root=paths.root,
+            title=config.title,
+            location=config.location,
+            no_geocode=config.no_geocode,
+        )
+
+        if result.status == "success":
+            try:
+                client.send_document(chat_id, result.output_path, result.caption, reply_markup=remove_keyboard_markup())
+            except TelegramApiError as exc:
+                move_to_archive(input_path, paths.failed_delivery_dir)
+                append_bot_event(
+                    paths.logs_dir / TELEGRAM_LOG_FILENAME,
+                    "delivery_failed",
+                    {"chat_id": chat_id, "input_path": str(input_path), "output_path": result.output_path, "error": str(exc)},
+                )
+                raise
+            saw_success = True
+            append_bot_event(
+                paths.logs_dir / TELEGRAM_LOG_FILENAME,
+                "sent_render",
+                {"chat_id": chat_id, "input_path": str(input_path), "output_path": result.output_path, "template": template},
+            )
+            continue
+
+        if result.status == "duplicate":
+            duplicate_output = Path(result.output_path) if result.output_path else None
+            if duplicate_output is not None and duplicate_output.exists():
+                try:
+                    client.send_document(chat_id, duplicate_output, result.caption, reply_markup=remove_keyboard_markup())
+                except TelegramApiError as exc:
+                    move_to_archive(input_path, paths.failed_delivery_dir)
+                    append_bot_event(
+                        paths.logs_dir / TELEGRAM_LOG_FILENAME,
+                        "delivery_failed",
+                        {"chat_id": chat_id, "input_path": str(input_path), "output_path": str(duplicate_output), "error": str(exc)},
+                    )
+                    raise
+                resent_duplicate = True
+                append_bot_event(
+                    paths.logs_dir / TELEGRAM_LOG_FILENAME,
+                    "resent_duplicate_render",
+                    {"chat_id": chat_id, "input_path": str(input_path), "output_path": str(duplicate_output), "template": template},
+                )
+            else:
+                saw_error = True
+                client.send_message(
+                    chat_id,
+                    f"{template} was already processed, but I could not find the saved PNG. Skipping it.",
+                    reply_markup=remove_keyboard_markup(),
+                )
+                append_bot_event(
+                    paths.logs_dir / TELEGRAM_LOG_FILENAME,
+                    "missing_duplicate_output",
+                    {"chat_id": chat_id, "input_path": str(input_path), "template": template, "output_path": result.output_path},
+                )
+            continue
+
+        saw_error = True
+        client.send_message(
+            chat_id,
+            f"RunStats could not render {template}. {result.error or ''}".strip(),
+            reply_markup=remove_keyboard_markup(),
+        )
+        append_bot_event(
+            paths.logs_dir / TELEGRAM_LOG_FILENAME,
+            "render_failed",
+            {"chat_id": chat_id, "input_path": str(input_path), "error": result.error, "template": template},
+        )
+
+    pending_requests.pop(str(chat_id), None)
+    save_pending_requests(pending_path, pending_requests)
+
+    if saw_success or (resent_duplicate and saw_error):
+        move_to_archive(input_path, paths.processed_dir)
+    elif resent_duplicate:
         move_to_archive(input_path, paths.processed_duplicates_dir)
         append_bot_event(
             paths.logs_dir / TELEGRAM_LOG_FILENAME,
             "duplicate_fit",
-            {"chat_id": chat_id, "input_path": str(input_path), "template": template},
+            {"chat_id": chat_id, "input_path": str(input_path), "templates": selected_templates},
         )
-        return True
-
-    client.send_message(
-        chat_id,
-        f"RunStats could not render this FIT file. {result.error or ''}".strip(),
-        reply_markup=remove_keyboard_markup(),
-    )
-    move_to_archive(input_path, paths.failed_render_dir)
-    append_bot_event(
-        paths.logs_dir / TELEGRAM_LOG_FILENAME,
-        "render_failed",
-        {"chat_id": chat_id, "input_path": str(input_path), "error": result.error, "template": template},
-    )
+    else:
+        move_to_archive(input_path, paths.failed_render_dir)
     return True
 
-    result = run_automation(
-        input_path=processing_path,
-        template=config.template,
-        route_mode=config.route_mode,
-        workspace_root=paths.root,
-        title=config.title,
-        location=config.location,
-        no_geocode=config.no_geocode,
-    )
 
-    if result.status == "success":
-        try:
-            client.send_document(incoming.chat_id, result.output_path, result.caption)
-        except TelegramApiError as exc:
-            move_to_archive(processing_path, paths.failed_delivery_dir)
-            append_bot_event(
-                paths.logs_dir / TELEGRAM_LOG_FILENAME,
-                "delivery_failed",
-                {
-                    "chat_id": incoming.chat_id,
-                    "input_path": str(processing_path),
-                    "output_path": result.output_path,
-                    "error": str(exc),
-                },
-            )
-            raise
-        move_to_archive(processing_path, paths.processed_dir)
-        append_bot_event(
-            paths.logs_dir / TELEGRAM_LOG_FILENAME,
-            "sent_render",
-            {
-                "chat_id": incoming.chat_id,
-                "input_path": str(processing_path),
-                "output_path": result.output_path,
-            },
-        )
-        return
-
-    if result.status == "duplicate":
-        client.send_message(incoming.chat_id, "This FIT activity was already processed.")
-        move_to_archive(processing_path, paths.processed_duplicates_dir)
-        append_bot_event(
-            paths.logs_dir / TELEGRAM_LOG_FILENAME,
-            "duplicate_fit",
-            {"chat_id": incoming.chat_id, "input_path": str(processing_path)},
-        )
-        return
-
-    client.send_message(incoming.chat_id, f"RunStats could not render this FIT file. {result.error or ''}".strip())
-    move_to_archive(processing_path, paths.failed_render_dir)
+def _cancel_pending_request(
+    *,
+    chat_id: int,
+    pending: dict[str, Any],
+    pending_requests: dict[str, dict[str, Any]],
+    pending_path: Path,
+    client: TelegramBotClient,
+    paths: AutomationPaths,
+) -> bool:
+    input_path = Path(str(pending.get("input_path", "")))
+    if input_path.exists():
+        input_path.unlink()
+    pending_requests.pop(str(chat_id), None)
+    save_pending_requests(pending_path, pending_requests)
+    client.send_message(chat_id, "Cancelled this FIT upload. Send a new .FIT document when you're ready.", reply_markup=remove_keyboard_markup())
     append_bot_event(
         paths.logs_dir / TELEGRAM_LOG_FILENAME,
-        "render_failed",
-        {"chat_id": incoming.chat_id, "input_path": str(processing_path), "error": result.error},
+        "cancelled_fit",
+        {"chat_id": chat_id, "input_path": str(input_path)},
     )
+    return True
 
 
 def extract_document(update: dict[str, Any]) -> IncomingDocument | None:
@@ -674,7 +790,7 @@ def extract_chat_id(update: dict[str, Any]) -> int | None:
     return value if isinstance(value, int) else None
 
 
-def load_pending_requests(path: str | Path) -> dict[str, dict[str, str]]:
+def load_pending_requests(path: str | Path) -> dict[str, dict[str, Any]]:
     pending_path = Path(path)
     if not pending_path.exists():
         return {}
@@ -684,24 +800,44 @@ def load_pending_requests(path: str | Path) -> dict[str, dict[str, str]]:
         return {}
     if not isinstance(raw, dict):
         return {}
-    result: dict[str, dict[str, str]] = {}
+    result: dict[str, dict[str, Any]] = {}
     for key, value in raw.items():
         if isinstance(key, str) and isinstance(value, dict):
-            result[key] = {str(inner_key): str(inner_value) for inner_key, inner_value in value.items()}
+            normalized: dict[str, Any] = {}
+            for inner_key, inner_value in value.items():
+                normalized_key = str(inner_key)
+                if normalized_key == "selected_templates" and isinstance(inner_value, list):
+                    normalized[normalized_key] = [str(item) for item in inner_value if isinstance(item, str)]
+                else:
+                    normalized[normalized_key] = str(inner_value)
+            normalized.setdefault("selected_templates", [])
+            normalized.setdefault("selection_stage", "awaiting_templates")
+            result[key] = normalized
     return result
 
 
-def save_pending_requests(path: str | Path, pending_requests: dict[str, dict[str, str]]) -> None:
+def save_pending_requests(path: str | Path, pending_requests: dict[str, dict[str, Any]]) -> None:
     pending_path = Path(path)
     pending_path.parent.mkdir(parents=True, exist_ok=True)
     pending_path.write_text(json.dumps(pending_requests, indent=2, sort_keys=True), encoding="utf-8")
 
 
-def build_template_prompt() -> str:
-    lines = ["Choose a template by name or number:"]
+def build_template_prompt(*, selected_templates: list[str] | None = None) -> str:
+    lines = [
+        "Choose one or more templates by name or number.",
+        "Send /done when finished or /cancel to discard this FIT.",
+    ]
+    if selected_templates is not None:
+        selected = ", ".join(selected_templates) if selected_templates else "none yet"
+        lines.append(f"Selected: {selected}")
     for index, name in enumerate(TEMPLATE_NAMES, start=1):
         lines.append(f"{index}. {name}")
     return "\n".join(lines)
+
+
+def build_selection_status_message(selected_templates: list[str]) -> str:
+    selected = ", ".join(selected_templates) if selected_templates else "none yet"
+    return f"Selected templates: {selected}\nPick another template or send /done."
 
 
 def build_template_keyboard() -> dict[str, Any]:
@@ -714,7 +850,8 @@ def build_template_keyboard() -> dict[str, Any]:
             current_row = []
     if current_row:
         rows.append(current_row)
-    return {"keyboard": rows, "resize_keyboard": True, "one_time_keyboard": True}
+    rows.append([{"text": "/done"}, {"text": "/cancel"}])
+    return {"keyboard": rows, "resize_keyboard": True, "one_time_keyboard": False}
 
 
 def remove_keyboard_markup() -> dict[str, bool]:
@@ -757,6 +894,7 @@ __all__ = [
     "build_parser",
     "build_template_keyboard",
     "build_template_prompt",
+    "build_selection_status_message",
     "extract_document",
     "handle_text_message",
     "handle_update",

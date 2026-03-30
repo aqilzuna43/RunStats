@@ -38,6 +38,23 @@ def _fmt_hhmmss(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
+def _measure_text_width(fig, text: str, *, fontproperties) -> float:
+    probe = fig.text(
+        0,
+        0,
+        text,
+        color=(1, 1, 1, 0),
+        ha="left",
+        va="bottom",
+        fontproperties=fontproperties,
+    )
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    width = probe.get_window_extent(renderer=renderer).width / fig.bbox.width
+    probe.remove()
+    return width
+
+
 # ─── Main render ─────────────────────────────────────────────────────────────
 
 def render_pro_analyst(
@@ -170,20 +187,28 @@ def _draw_hero_distance(fig, summary: ActivitySummary) -> None:
         weight="heavy",
         size=88,
     )
+    km_fp = font_props("medium", 24)
+    gap = 0.02
+    num_width = _measure_text_width(fig, num_str, fontproperties=dist_fp)
+    km_width = _measure_text_width(fig, "KM", fontproperties=km_fp)
+    total_width = num_width + gap + km_width
+    left_edge = 0.5 - (total_width / 2.0)
+    num_x = left_edge + num_width
+    km_x = left_edge + num_width + gap
 
     fig.text(
-        0.50, 0.345,
+        num_x, 0.345,
         num_str,
         color="#FFFFFF",
         ha="right", va="center",
         fontproperties=dist_fp,
     )
     fig.text(
-        0.52, 0.328,
+        km_x, 0.328,
         "KM",
         color=_ORANGE,
         ha="left", va="center",
-        fontproperties=font_props("medium", 24),
+        fontproperties=km_fp,
     )
 
 
