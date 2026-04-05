@@ -34,6 +34,12 @@ Direct Telegram bot runner:
 runstats-telegram-bot --chat-id 535004713 --workspace C:\RunStatsAutomation
 ```
 
+Direct Telegram bot runner with immediate FIT processing:
+
+```bash
+runstats-telegram-bot --chat-id 535004713 --workspace C:\RunStatsAutomation --template glass_slab --auto-process-uploads
+```
+
 Render the Instagram Story overlay directly:
 
 ```bash

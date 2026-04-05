@@ -102,6 +102,35 @@ class TelegramBotTests(unittest.TestCase):
             self.assertEqual(pending["535004713"]["selected_templates"], [])
             self.assertEqual(pending["535004713"]["selection_stage"], "awaiting_templates")
 
+    def test_fit_upload_can_process_immediately_with_default_template(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = resolve_automation_paths(workspace_root=temp_dir)
+            client = FakeTelegramClient()
+            output_path = str(Path(temp_dir) / "exports" / "glass_slab.png")
+            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_path).write_bytes(b"png")
+
+            with patch(
+                "runstats.telegram_bot.run_automation",
+                return_value=self._result(status="success", template="glass_slab", output_path=output_path, caption="done"),
+            ) as automation_mock:
+                handle_update(
+                    update=self._fit_update(),
+                    config=self._config(temp_dir, auto_process_uploads=True),
+                    client=client,
+                    paths=paths,
+                )
+
+            self.assertIn(
+                (535004713, "Received 20377609259_ACTIVITY_3.fit. Rendering glass_slab now."),
+                client.messages,
+            )
+            self.assertEqual(client.documents, [(535004713, output_path, "done")])
+            self.assertEqual(automation_mock.call_args.kwargs["template"], "glass_slab")
+            self.assertEqual(len(list((Path(temp_dir) / "processed").glob("*.fit"))), 1)
+            pending = load_pending_requests(Path(temp_dir) / "logs" / "telegram_pending_requests.json")
+            self.assertNotIn("535004713", pending)
+
     def test_handle_update_rejects_non_fit_files(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = resolve_automation_paths(workspace_root=temp_dir)
@@ -293,11 +322,12 @@ class TelegramBotTests(unittest.TestCase):
         self.assertIn('filename="result.png"', text)
         self.assertIn("image/png", text)
 
-    def _config(self, temp_dir: str) -> TelegramBotConfig:
+    def _config(self, temp_dir: str, *, auto_process_uploads: bool = False) -> TelegramBotConfig:
         return TelegramBotConfig(
             token="token",
             workspace_root=Path(temp_dir),
             template="glass_slab",
+            auto_process_uploads=auto_process_uploads,
             route_mode="auto",
             allowed_chat_id=535004713,
             title=None,

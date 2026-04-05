@@ -39,6 +39,7 @@ class TelegramBotConfig:
     token: str
     workspace_root: Path
     template: str
+    auto_process_uploads: bool
     route_mode: str
     allowed_chat_id: int | None
     title: str | None
@@ -192,6 +193,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Template to render for valid FIT uploads.",
     )
     parser.add_argument(
+        "--auto-process-uploads",
+        action="store_true",
+        help="Render the configured template immediately when a .FIT upload arrives.",
+    )
+    parser.add_argument(
         "--mode",
         default="auto",
         choices=("auto", "solid", "gradient"),
@@ -247,6 +253,7 @@ def main(argv: list[str] | None = None) -> int:
         token=args.token,
         workspace_root=workspace_root,
         template=args.template,
+        auto_process_uploads=args.auto_process_uploads,
         route_mode=args.mode,
         allowed_chat_id=args.chat_id,
         title=None if args.no_title else args.title,
@@ -344,6 +351,27 @@ def handle_update(*, update: dict[str, Any], config: TelegramBotConfig, client: 
         return
 
     processing_path = write_processing_file(incoming, client, paths.processing_dir)
+    if config.auto_process_uploads:
+        client.send_message(
+            incoming.chat_id,
+            f"Received {processing_path.name}. Rendering {config.template} now.",
+            reply_markup=remove_keyboard_markup(),
+        )
+        _process_input_path(
+            chat_id=incoming.chat_id,
+            input_path=processing_path,
+            selected_templates=[config.template],
+            config=config,
+            client=client,
+            paths=paths,
+        )
+        append_bot_event(
+            paths.logs_dir / TELEGRAM_LOG_FILENAME,
+            "queued_fit_auto_processed",
+            {"chat_id": incoming.chat_id, "file_name": processing_path.name, "update_id": incoming.update_id, "template": config.template},
+        )
+        return
+
     pending_requests[str(incoming.chat_id)] = {
         "input_path": str(processing_path),
         "file_name": processing_path.name,
@@ -508,6 +536,31 @@ def _finalize_pending_request(
         client.send_message(chat_id, "I could not find the pending FIT file. Send it again.", reply_markup=remove_keyboard_markup())
         return True
 
+    _process_input_path(
+        chat_id=chat_id,
+        input_path=input_path,
+        selected_templates=selected_templates,
+        config=config,
+        client=client,
+        paths=paths,
+    )
+
+    pending_requests.pop(str(chat_id), None)
+    save_pending_requests(pending_path, pending_requests)
+    return True
+
+
+def _process_input_path(
+    *,
+    chat_id: int,
+    input_path: Path,
+    selected_templates: list[str],
+    config: TelegramBotConfig,
+    client: TelegramBotClient,
+    paths: AutomationPaths,
+) -> None:
+    input_path = Path(input_path)
+
     saw_success = False
     resent_duplicate = False
     saw_error = False
@@ -586,9 +639,6 @@ def _finalize_pending_request(
             "render_failed",
             {"chat_id": chat_id, "input_path": str(input_path), "error": result.error, "template": template},
         )
-
-    pending_requests.pop(str(chat_id), None)
-    save_pending_requests(pending_path, pending_requests)
 
     if saw_success or (resent_duplicate and saw_error):
         move_to_archive(input_path, paths.processed_dir)
