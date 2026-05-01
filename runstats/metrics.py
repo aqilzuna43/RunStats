@@ -105,11 +105,11 @@ def _merge_summary_hint(computed: ActivitySummary, hint: ActivitySummary | None)
         return computed
 
     return ActivitySummary(
-        distance_km=computed.distance_km,
-        moving_time_s=computed.moving_time_s,
-        elapsed_time_s=computed.elapsed_time_s,
-        avg_pace_min_per_km=computed.avg_pace_min_per_km,
-        elevation_gain_m=computed.elevation_gain_m if computed.elevation_gain_m is not None else hint.elevation_gain_m,
+        distance_km=hint.distance_km,
+        moving_time_s=hint.moving_time_s,
+        elapsed_time_s=hint.elapsed_time_s,
+        avg_pace_min_per_km=hint.avg_pace_min_per_km,
+        elevation_gain_m=hint.elevation_gain_m if hint.elevation_gain_m is not None else computed.elevation_gain_m,
         avg_heart_rate_bpm=hint.avg_heart_rate_bpm,
         total_calories_kcal=hint.total_calories_kcal,
     )

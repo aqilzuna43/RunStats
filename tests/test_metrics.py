@@ -82,8 +82,40 @@ class MetricsTests(unittest.TestCase):
 
         summary = summarize_activity(activity)
 
+        self.assertEqual(summary.distance_km, 5.0)
+        self.assertEqual(summary.moving_time_s, 1500.0)
+        self.assertEqual(summary.elapsed_time_s, 1500.0)
+        self.assertEqual(summary.avg_pace_min_per_km, 5.0)
         self.assertEqual(summary.avg_heart_rate_bpm, 173)
         self.assertEqual(summary.total_calories_kcal, 539)
+        self.assertEqual(summary.elevation_gain_m, 12.0)
+
+    def test_summarize_uses_computed_elevation_when_summary_hint_lacks_it(self) -> None:
+        start = datetime(2026, 3, 26, 6, 0, tzinfo=timezone.utc)
+        summary_hint = ActivitySummary(
+            distance_km=5.0,
+            moving_time_s=1500.0,
+            elapsed_time_s=1600.0,
+            avg_pace_min_per_km=5.0,
+            elevation_gain_m=None,
+        )
+        activity = ActivityData(
+            source_path=Path("sample.fit"),
+            source_type="fit",
+            points=[
+                TrackPoint(3.1390, 101.6869, start, elevation_m=10.0),
+                TrackPoint(3.1399, 101.6879, start + timedelta(minutes=5), elevation_m=25.0),
+                TrackPoint(3.1408, 101.6889, start + timedelta(minutes=10), elevation_m=20.0),
+            ],
+            summary_hint=summary_hint,
+        )
+
+        summary = summarize_activity(activity)
+
+        self.assertEqual(summary.distance_km, 5.0)
+        self.assertEqual(summary.moving_time_s, 1500.0)
+        self.assertEqual(summary.elapsed_time_s, 1600.0)
+        self.assertEqual(summary.avg_pace_min_per_km, 5.0)
         self.assertAlmostEqual(summary.elevation_gain_m, 15.0)
 
     def test_activity_data_caches_derived_sequences(self) -> None:
